@@ -2,11 +2,13 @@ from tkinter import *
 from tkinter import filedialog
 import pygame.mixer as mixer
 import os
+from tkinter import ttk
 
 # Initializing the mixer
 mixer.init()
 
-def play_song(song_name: StringVar, songs_list: Listbox, status: StringVar):
+
+def play_song(song_name: StringVar, songs_list: Listbox, status: StringVar, progress: ttk.Progressbar):
     songPlayingList = songs_list.get(ACTIVE).split("-")
     songName = songPlayingList[0]
     songArtistList = songPlayingList[1].split(".")
@@ -18,10 +20,17 @@ def play_song(song_name: StringVar, songs_list: Listbox, status: StringVar):
 
     status.set(f"PLAYING:    {songName.upper()} by {songArtist.upper()}")
 
+    # Resetting the progress bar
+    progress_bar['value'] = 0
+    progress_bar['maximum'] = mixer.Sound(songs_list.get(ACTIVE)).get_length()
+    progress.start(1000)
+    update_progress()
 
-def stop_song(status: StringVar):
+
+def stop_song(status: StringVar, progress: ttk.Progressbar):
     mixer.music.stop()
     status.set("Song STOPPED")
+    progress.stop()
 
 
 def load(listbox):
@@ -33,14 +42,20 @@ def load(listbox):
         listbox.insert(END, track)
 
 
-def pause_song(status: StringVar):
+def pause_song(status: StringVar, progress: ttk.Progressbar):
     mixer.music.pause()
     status.set("Song PAUSED")
+    progress.stop()
 
 
-def resume_song(status: StringVar):
+def resume_song(status: StringVar, songs_list: Listbox, progress: ttk.Progressbar):
+    songPlayingList = songs_list.get(ACTIVE).split("-")
+    songName = songPlayingList[0]
+    songArtistList = songPlayingList[1].split(".")
+    songArtist = songArtistList[0]
     mixer.music.unpause()
-    status.set("Song RESUMED")
+    status.set(f"RESUMING... {songName.upper()} by {songArtist.upper()}")
+    progress.start(1000)
 
 
 # Creating the master GUI
@@ -59,13 +74,23 @@ button_frame.place(y=80)
 listbox_frame = LabelFrame(root, text="Pulkit's Playlists", bg='RoyalBlue')
 listbox_frame.place(x=385, y=0, height=280, width=280)
 
+progress_bar = ttk.Progressbar(button_frame, orient='horizontal', mode='determinate', length=250)
+progress_bar.place(x=65, y=90)
+
 # All StringVar variables
 current_song = StringVar(root, value='')
 
 song_status = StringVar(root, value='No song playing at the moment')
 
+
+def update_progress():
+    current_time = mixer.music.get_pos() // 1000
+    progress_bar['value'] = current_time
+    root.after(1000, update_progress)
+
+
 # Playlist ListBox
-playlist = Listbox(listbox_frame, font=('comic sans ms', 10), selectbackground='gray')
+playlist = Listbox(listbox_frame, font=('comic sans ms', 10), selectbackground='LightPink')
 
 scroll_bar = Scrollbar(listbox_frame, orient=VERTICAL)
 scroll_bar.pack(side=RIGHT, fill=BOTH)
@@ -87,19 +112,24 @@ song_lbl = Label(song_frame, textvariable=current_song, font=("Times", 12), widt
 song_lbl.place(x=113, y=15)
 
 # Buttons in the main screen
-pause_btn = Button(button_frame, text='Pause', bg='Aqua', font=("Georgia", 13), width=6, command=lambda: pause_song(song_status))
+pause_btn = Button(button_frame, text='Pause', bg='Aqua', font=("Georgia", 13), width=6,
+                   command=lambda: pause_song(song_status, progress_bar))
 pause_btn.place(x=15, y=40)
 
-stop_btn = Button(button_frame, text='Stop', bg='Aqua', font=("Georgia", 13), width=6, command=lambda: stop_song(song_status))
+stop_btn = Button(button_frame, text='Stop', bg='Aqua', font=("Georgia", 13), width=6,
+                  command=lambda: stop_song(song_status, progress_bar))
 stop_btn.place(x=105, y=40)
 
-play_btn = Button(button_frame, text='Play', bg='Aqua', font=("Georgia", 13), width=6, command=lambda: play_song(current_song, playlist, song_status))
+play_btn = Button(button_frame, text='Play', bg='Aqua', font=("Georgia", 13), width=6,
+                  command=lambda: play_song(current_song, playlist, song_status, progress_bar))
 play_btn.place(x=195, y=40)
 
-resume_btn = Button(button_frame, text='Resume', bg='Aqua', font=("Georgia", 13), width=6, command=lambda: resume_song(song_status))
+resume_btn = Button(button_frame, text='Resume', bg='Aqua', font=("Georgia", 13), width=6,
+                    command=lambda: resume_song(song_status, playlist, progress_bar))
 resume_btn.place(x=285, y=40)
 
-load_btn = Button(button_frame, text='Add Your Playlist', bg='Aqua', font=("Georgia", 13), width=35, command=lambda: load(playlist))
+load_btn = Button(button_frame, text='Add Your Playlist', bg='Aqua', font=("Georgia", 13), width=35,
+                  command=lambda: load(playlist))
 load_btn.place(x=10, y=125)
 
 # Label at the bottom that displays the state of the music
@@ -108,4 +138,3 @@ Label(root, textvariable=song_status, bg='cyan', font=('Times', 9), justify=LEFT
 # Finalizing the GUI
 root.update()
 root.mainloop()
-
