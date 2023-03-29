@@ -1,10 +1,11 @@
 # Music Player
 This is a Python program for a music player GUI built using the tkinter module. The music player allows the user to load a playlist from a directory and play songs from the playlist. The program uses the pygame mixer library for playing music.
 
+
 ## Prerequisites
-Python 3.x 
-Pygame library 
-Tkinter module
+1. Python 3.x 
+2. Pygame library 
+3. Tkinter module
 
 ## Installation
 1. Install Python 3.x from the official website: https://www.python.org/downloads/
